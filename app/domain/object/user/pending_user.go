@@ -22,7 +22,6 @@ func NewPendingUser(username, password string, isUniqueUsername bool) (*PendingU
 	if !isUniqueUsername {
 		return nil, errors.ErrConflict
 	}
-
 	user := &PendingUser{}
 
 	if err := user.SetUsername(username); err != nil {

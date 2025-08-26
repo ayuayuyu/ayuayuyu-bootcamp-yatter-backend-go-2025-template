@@ -1,6 +1,8 @@
 package user
 
-import "yatter-backend-go/app/domain/object/user"
+import (
+	"yatter-backend-go/app/domain/object/user"
+)
 
 // （研修用の説明）
 // ui/api/user/response.go
@@ -32,5 +34,20 @@ func toPostUsersResponse(user *user.User) *PostUsersResponse {
 		Note:           "",
 		Avatar:         "",
 		Header:         "",
+	}
+}
+
+// toGetUsersProfileResponse; ユーザー名参照のレスポンスに変換
+func toGetUsersProfileResponse(user *user.UserProfile) *PostUsersResponse {
+	return &PostUsersResponse{
+		ID:             user.ID,
+		Username:       user.Username,
+		DisplayName:    user.DisplayName,
+		CreatedAt:      user.CreatedAt.Format("2006-01-02T15:04:05.000Z"),
+		FollowersCount: int(user.FollowersCount),
+		FollowingCount: int(user.FollowingCount),
+		Note:           user.Note,
+		Avatar:         user.Avatar,
+		Header:         user.Header,
 	}
 }

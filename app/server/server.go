@@ -17,9 +17,13 @@ import (
 	"yatter-backend-go/app/infra/transaction"
 	api_auth "yatter-backend-go/app/ui/api/auth"
 	"yatter-backend-go/app/ui/api/health"
+	api_timeline "yatter-backend-go/app/ui/api/timelines"
 	api_user "yatter-backend-go/app/ui/api/user"
+	api_yweets "yatter-backend-go/app/ui/api/yweets"
 	"yatter-backend-go/app/usecase/auth"
+	"yatter-backend-go/app/usecase/timelines"
 	"yatter-backend-go/app/usecase/user"
+	"yatter-backend-go/app/usecase/yweets"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -41,6 +45,9 @@ func Run(db *sqlx.DB) error {
 
 	// Repository
 	userRepo := infra.NewUserRepository()
+	userProfileRepo := query.NewUserProfileRepository(db)
+	yweetsIdRepo := query.NewYweetsIdRepository(db)
+	timelinesRepo := query.NewTimelinesRepository(db)
 
 	// Domain Service
 	usernameUniqueChecker := service.NewUsernameUniqueChecker(userRepo)
@@ -54,11 +61,25 @@ func Run(db *sqlx.DB) error {
 		usernameUniqueChecker,
 		transactor,
 	)
+	userFindUsecase := user.NewUserByUsernameUseCase(
+		userProfileRepo,
+	)
+
+	yweetsIdFindUseCase := yweets.NewYweetsByIdUseCase(
+		yweetsIdRepo,
+	)
+
+	timelinesUseCase := timelines.NewTimelinesUseCase(
+		timelinesRepo,
+	)
+
 	loginUseCase := auth.NewLoginUseCase(authQueryService)
 
 	// Handler
-	userHandler := api_user.NewUserHandler(userCreateUseCase)
+	userHandler := api_user.NewUserHandler(userCreateUseCase, userFindUsecase)
 	authHandler := api_auth.NewAuthHandler(loginUseCase)
+	yweetsHandler := api_yweets.NewYweetsHandler(yweetsIdFindUseCase)
+	timelinesHandler := api_timeline.NewTimelinesHandler(timelinesUseCase)
 
 	// ルーターの設定
 	r := chi.NewRouter()
@@ -84,6 +105,15 @@ func Run(db *sqlx.DB) error {
 		// ユーザー関連
 		r.Route("/users", func(r chi.Router) {
 			r.Post("/", userHandler.SignUp)
+			r.Get("/{username}", userHandler.GetSingleUserByUsername)
+		})
+
+		r.Route("/yweets", func(r chi.Router) {
+			r.Get("/{id}", yweetsHandler.GetYweetsById)
+		})
+
+		r.Route("/timelines", func(r chi.Router) {
+			r.Get("/public", timelinesHandler.GetTimelines)
 		})
 
 		// ヘルスチェック
